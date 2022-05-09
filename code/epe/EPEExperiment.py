@@ -47,6 +47,7 @@ vgg_losses = {\
 
 fake_datasets = {\
 	'GTA':ds.PfDDataset,
+	'Carla':ds.CarlaDataset,
 }
 
 
@@ -104,7 +105,7 @@ class EPEExperiment(ee.GANExperiment):
 		self.fake_val_path   = Path(fake_cfg.get('val_filelist', None))
 		self.fake_test_path  = Path(fake_cfg.get('test_filelist', None))
 
-		self._log.debug(f'  Fake dataset {self.fake_name} in {self.fake_train_path}[train], {self.fake_val_path}[val], {self.fake_test_path}[test].')
+		self._log.debug(f'  Fake dataset {self.fake_name} in {self.fake_train_path}[train], {self.fake_val_path}[val], {self.fake_test_path}[TEST].')
 
 		# real dataset
 
@@ -151,7 +152,7 @@ class EPEExperiment(ee.GANExperiment):
 		# validation
 		if self.no_validation:
 			self.dataset_fake_val = None
-		elif self.action == 'test':
+		elif self.action == 'TEST':
 			self.dataset_fake_val = fake_datasets[self.fake_name](ds.utils.read_filelist(self.fake_test_path, 4, True))
 		else:
 			self.dataset_fake_val = fake_datasets[self.fake_name](ds.utils.read_filelist(self.fake_val_path, 4, True))

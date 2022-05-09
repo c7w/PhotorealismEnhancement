@@ -268,7 +268,7 @@ class BaseExperiment:
 
 	"""
 
-	actions  = ['train', 'test', 'infer']
+	actions  = ['train', 'TEST', 'infer']
 	networks = {}
 
 	def __init__(self, args):
@@ -543,6 +543,12 @@ class BaseExperiment:
 				for batch in self.loader:
 					if self._should_stop(e, self.i):
 						break
+					# print('Fgt_labels', batch.fake.gt_labels.shape)
+					# print('Fgbuffers', batch.fake.gbuffers.shape)
+					# print('Frlabels', batch.fake.robust_labels.shape)
+					#
+					# print('Trlabels', batch.real.robust_labels.shape)
+
 
 					log_scalar, log_img = self._train_network(batch.to(self.device))
 					if self._log.isEnabledFor(logging.DEBUG):

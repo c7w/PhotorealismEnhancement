@@ -28,7 +28,7 @@ fake_dataset:
   name: GTA
   train_filelist: /data/Pfd/train.txt
   val_filelist: /data/Pfd/val.txt 
-  test_filelist: /data/Pfd/test.txt 
+  test_filelist: /data/Pfd/TEST.txt
   sampling: 
     type: 'matching'
     matched_crop_path: /data/matches/match_Pfd-Cityscapes_1.0.csv

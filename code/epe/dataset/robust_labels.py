@@ -71,6 +71,8 @@ class RobustlyLabeledDataset(ImageDataset):
 
 		robust_labels = torch.LongTensor(robust_labels).unsqueeze(0)
 
+		# print("In real set, robust labels are:", robust_labels.shape)
+
 		return EPEBatch(img, path=img_path, robust_labels=robust_labels)
 	pass
 

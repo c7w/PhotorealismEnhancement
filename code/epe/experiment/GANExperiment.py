@@ -9,7 +9,7 @@ from torch import autograd
 from .BaseExperiment import BaseExperiment, NetworkState, toggle_grad, seed_worker
 
 class GANExperiment(BaseExperiment):
-	actions  = ['train', 'test', 'infer']
+	actions  = ['train', 'TEST', 'infer']
 	networks = {}
 
 	def __init__(self, args):
@@ -48,6 +48,7 @@ class GANExperiment(BaseExperiment):
 
 
 	def _train_network(self, batch):
+		# print('In train_network', batch, self.i)
 		if self.i % 2 == 0:
 			log_scalar, log_img = self._train_discriminator(batch, self.i)
 		else:
