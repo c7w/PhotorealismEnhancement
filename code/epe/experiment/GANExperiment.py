@@ -2,6 +2,7 @@ import time
 import logging
 from pathlib import Path
 
+import IPython
 from scipy.io import savemat
 import torch
 from torch import autograd
@@ -49,6 +50,7 @@ class GANExperiment(BaseExperiment):
 
 	def _train_network(self, batch):
 		# print('In train_network', batch, self.i)
+
 		if self.i % 2 == 0:
 			log_scalar, log_img = self._train_discriminator(batch, self.i)
 		else:
@@ -64,9 +66,36 @@ class GANExperiment(BaseExperiment):
 		toggle_grad(self.network.discriminator, True)
 
 		self.disc_state.prepare()
+
+		# f = open(f"./{i}.log", 'w+')
+		#
+		# if i > 35:
+		#
+		# 	f.write(f'\nTraining discriminator at iteration {i}. Logging parameters before training.\n')
+		# 	for name, para in self.network.discriminator.named_parameters():
+		# 		f.write(f'{name}\n{para}\n\n')
+
+
+
 		log_scalar, log_img = self._run_discriminator(batch.fake, batch.real, i)
+
+		# if i > 35:
+		#
+		# 	f.write(f'\nTraining discriminator at iteration {i}. Logging grads before updating.\n')
+		#
+		# 	for name, para in self.network.discriminator.named_parameters():
+		# 		f.write(f'{name}\n{para.grad}\n\n')
+
 		self.disc_state.update()
+
+		# if i > 35:
+		#
+		# 	f.write(f'\nTraining discriminator at iteration {i}. Logging parameters after training.\n')
+		# 	for name, para in self.network.discriminator.named_parameters():
+		# 		f.write(f'{name}\n{para}\n\n')
+
 		# self._profiler.step()
+		# f.close()
 
 		return log_scalar, log_img
 
@@ -78,8 +107,61 @@ class GANExperiment(BaseExperiment):
 		toggle_grad(self.network.discriminator, False)
 
 		self.gen_state.prepare()
-		log_scalar, log_img = self._run_generator(batch.fake, batch.real, i)				
+
+		# f = open(f"./{i}.log", 'w+')
+		#
+		# if i > 35:
+		#
+		# 	f.write(f'\nTraining generator at iteration {i}. Logging data before training.\n')
+		#
+		# 	# Find if there is nan in batch.fake
+		# 	if torch.isnan(batch.fake.img).any():
+		# 		f.write("Find nan in batch.fake.img")
+		# 	else:
+		# 		f.write("No nan in batch.fake.img, {}".format(batch.fake.img.shape))
+		#
+		# 	if torch.isnan(batch.fake.robust_labels).any():
+		# 		f.write("Find nan in batch.fake.robust_labels")
+		# 	else:
+		# 		f.write("No nan in batch.fake.robust_labels, {}".format(batch.fake.robust_labels.shape))
+		#
+		# 	if torch.isnan(batch.fake.gbuffers).any():
+		# 		f.write("Find nan in batch.fake.gbuffers")
+		# 	else:
+		# 		f.write("No nan in batch.fake.gbuffers, {}".format(batch.fake.gbuffers.shape))
+		#
+		# 	if torch.isnan(batch.fake.gt_labels).any():
+		# 		f.write("Find nan in batch.fake.gt_labels")
+		# 	else:
+		# 		f.write("No nan in batch.fake.gt_labels, {}".format(batch.fake.gt_labels.shape))
+		#
+		# 	f.write(f'\nTraining generator at iteration {i}. Logging parameters before training.\n')
+		# 	for name, para in self.network.generator.named_parameters():
+		# 		f.write(f'{name}\n{para}\n\n')
+
+		if i == 1:
+			print("catch")
+
+		log_scalar, log_img = self._run_generator(batch.fake, batch.real, i)
+
+		# if i > 35:
+		#
+		# 	f.write(f'\nTraining generator at iteration {i}. Logging grads before updating.\n')
+		# 	# self._log.info(f'{self.network.generator.parameters()}')
+		# 	for name, para in self.network.generator.named_parameters():
+		# 		f.write(f'{name}\n{para.grad}\n\n')
+
 		self.gen_state.update()
+
+		# if i > 35:
+		#
+		# 	f.write(f'\nTraining generator at iteration {i}. Logging parameters after training.\n')
+		# 	for name, para in self.network.generator.named_parameters():
+		# 		f.write(f'{name}\n{para}\n\n')
+		#
+		# f.close()
+
+
 		# self._profiler.step()
 
 		return log_scalar, log_img
@@ -195,7 +277,7 @@ class GANExperiment(BaseExperiment):
 		pass
 
 
-	def test(self):
+	def TEST(self):
 		"""Test a network on a dataset."""
 		self.loader_fake = torch.utils.data.DataLoader(self.dataset_fake_val, \
 			batch_size=1, shuffle=(self.shuffle_test), \

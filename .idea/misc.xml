@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.8.13 (sftp://ubuntu@192.168.137.7:22/home/ubuntu/.conda/envs/epe/bin/python3)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.8.13 (sftp://gaoha@10.0.0.14:22/home/gaoha/.conda/envs/epe/bin/python3)" project-jdk-type="Python SDK" />
 </project>

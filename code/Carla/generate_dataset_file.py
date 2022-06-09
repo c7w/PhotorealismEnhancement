@@ -1,6 +1,8 @@
 import glob
+import itertools
 import os
 import argparse
+from multiprocessing import Process
 
 import IPython
 import imageio
@@ -14,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 
 class CityScape:
@@ -46,11 +49,12 @@ class CityScape:
         }
 
         self.color2name = {v: k for k, v in self.name2color.items()}
+        CityScape.color2id = { k: Carla.name2id(v) for k, v in Carla.color2name.items() }
 
 # Carla Labels
 class Carla:
     def __init__(self):
-        self.name2color = {
+        Carla.name2color = {
             'unlabeled': (0, 0, 0), ###
             'building': (70, 70, 70), ###
             'fence': (100, 40, 40), ###
@@ -76,11 +80,14 @@ class Carla:
             'terrain': (145, 170, 100), ###
         }
 
-        self.color2name = {v: k for k, v in self.name2color.items()}
+        Carla.color2name = {v: k for k, v in Carla.name2color.items()}
+        Carla.color2id = { k: Carla.name2id(v) for k, v in Carla.color2name.items() }
+        print(Carla.color2id)
 
-    def name2id(self, name):
+    @classmethod
+    def name2id(cls, name):
         if name in ['unlabeled', 'water', 'other', 'dynamic']: return 11
-        if name in ['building', 'fence', 'bridge']: return 2
+        if name in ['building', 'fence', 'bridge']: return 10
         if name in ['pole']: return 6
         if name in ['wall', 'rail_track', 'guard_rail', 'road_line']: return 10
         if name in ['person']: return 5
@@ -93,6 +100,8 @@ class Carla:
         if name in ['terrain']: return 3
 
 
+
+
     def generate_dataset_file(self, args):
 
         f = open(args.dst_path, 'w+', encoding='utf-8')
@@ -102,6 +111,7 @@ class Carla:
             raise Exception("Source path does not exist.")
 
         # Iterate through every directory in the src_path
+        print( [os.listdir(args.src_path)[0],])
         for dir_name in os.listdir(args.src_path):
 
             # Open it
@@ -111,7 +121,7 @@ class Carla:
             print(f"Processing {dir_name}...")
 
             # Iterate through all the pngs in tmp_path
-            for file_name in os.listdir(road_rgb_path):
+            for file_name in tqdm(os.listdir(road_rgb_path)):
                 if file_name.endswith(".png"):
                     # img_path
                     f.write(Path(os.path.join(args.src_path, dir_name, '1', 'rgb_v', file_name)).resolve().__str__())
@@ -127,34 +137,69 @@ class Carla:
 
                     if not os.path.exists(g_buffer_dir):
 
-                        print(f"{g_buffer_dir} does not exist, calculating...")
+                        # print(f"{g_buffer_dir} does not exist, calculating...")
                         #
                         # Create the directory if it doesn't exist
                         os.makedirs(os.path.dirname(g_buffer_dir), exist_ok=True)
+
+                        # IPython.embed()
 
                         data = {}
 
                         # Load RGB image
                         data['img'] = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'rgb_v', file_name)))
 
-                        data['gbuffers'] = np.array([
-                            np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'depth_v', file_name)))
-                        ])
+
+                        raw_depth_map = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'depth_v', file_name)))
+                        _x = np.array([1, 256, 256*256]).reshape(3,1) / (256 * 256 * 256 - 1)
+
+                        data['gbuffers'] = raw_depth_map.dot(_x)
 
                         gtlabel_map = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'mask_v', file_name)))
+                        # shader_map = np.zeros((gtlabel_map.shape[0], gtlabel_map.shape[1], 12))
 
-                        # From (h, w, 3) to (h, w, 1), use lambda function to convert to (h, w, 1)
-                        new_gtlabel_map = np.zeros(shape=(gtlabel_map.shape[0], gtlabel_map.shape[1]), dtype=np.uint8)
+                        mask = np.zeros(shape=(gtlabel_map.shape[0], gtlabel_map.shape[1], 12))
 
-                        for i in range(gtlabel_map.shape[0]):
-                            for j in range(gtlabel_map.shape[1]):
-                                new_gtlabel_map[i, j] = np.array([self.name2id(self.color2name[tuple(gtlabel_map[i, j, :])])])
+                        for idx, color in enumerate(Carla.color2id.keys()):
+                            mask[:, :, Carla.color2id[tuple(color)] ] += (gtlabel_map == color).all(axis=2)
 
-                        shader_map = np.zeros((gtlabel_map.shape[0], gtlabel_map.shape[1], 12), dtype=np.float32)
-                        for k in range(12):
-                            shader_map[:, :, k] = (new_gtlabel_map == k).astype(np.float32)
 
-                        data['shader'] = shader_map
+                        data['shader'] = mask
+
+                        # IPython.embed()
+                        # jobs_all = list(itertools.product(range(gtlabel_map.shape[0]), range(gtlabel_map.shape[1])))
+                        # THREAD_CNT = 12
+                        # jobs = [ [] for _ in range(int(len(jobs_all) / THREAD_CNT) + 1) ]
+                        # for k in range(0, len(jobs_all), THREAD_CNT):
+                        #     jobs[int(k / THREAD_CNT)] = jobs_all[k:k+THREAD_CNT]
+
+                        # for job in jobs:
+                        #     process_list = []
+                        #     for arg in job:
+                        #         process_list.append(Process(target=convert_gtlabel_to_shader_map, args=arg))
+                        #         process_list[-1].start()
+                        #     for process in process_list:
+                        #         process.join()
+
+
+
+
+                        # shader_map = np.apply_along_axis(convert_gtlabel_to_shader_map, axis=2, arr=gtlabel_map)
+
+                        # # From (h, w, 3) to (h, w, 1), use lambda function to convert to (h, w, 1)
+                        # new_gtlabel_map = np.zeros(shape=(gtlabel_map.shape[0], gtlabel_map.shape[1]), dtype=np.uint8)
+                        #
+                        # for i in range(gtlabel_map.shape[0]):
+                        #     for j in range(gtlabel_map.shape[1]):
+                        #         new_gtlabel_map[i, j] = np.array([])
+                        #
+                        # shader_map = np.zeros((gtlabel_map.shape[0], gtlabel_map.shape[1], 12), dtype=np.float32)
+                        # for k in range(12):
+                        #     shader_map[:, :, k] = (new_gtlabel_map == k).astype(np.float32)
+
+
+
+                        # IPython.embed()
 
                         np.savez(g_buffer_dir, **data)
 
@@ -165,33 +210,34 @@ class Carla:
                     f.write(Path(os.path.join(args.src_path, dir_name, '1', 'mask_v', file_name)).resolve().__str__())
                     f.write('\n')
 
+            # break # Comment this line to process all the directories
         f.close()
 
         # Then, Iterate through all g_buffers and calculate the means and stds
 
-        sum = np.zeros(shape=(720, 1280, 3), dtype=np.float32)
-        tmp_std = np.zeros(shape=(720, 1280, 3), dtype=np.float32)
-
-        g_buffer_dir = Path(args.dst_path, '..', 'g_buffer').resolve()
-
-        for filename in glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True):
-            data = np.load(filename)
-            sum += data['gbuffers'][0]
-            print(filename)
-
-        mean = sum / len(list(glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True)))
-
-        for filename in glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True):
-            data = np.load(filename)
-            tmp_std += (data['gbuffers'][0] - mean) ** 2
-            print(filename)
-
-        std = np.sqrt(tmp_std / len(list(glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True))))
+        # sum = np.zeros(shape=(720, 1280, 3), dtype=np.float32)
+        # tmp_std = np.zeros(shape=(720, 1280, 3), dtype=np.float32)
+        #
+        # g_buffer_dir = Path(args.dst_path, '..', 'g_buffer').resolve()
+        #
+        # for filename in glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True):
+        #     data = np.load(filename)
+        #     sum += data['gbuffers'][0]
+        #     print(filename)
+        #
+        # mean = sum / len(list(glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True)))
+        #
+        # for filename in glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True):
+        #     data = np.load(filename)
+        #     tmp_std += (data['gbuffers'][0] - mean) ** 2
+        #     print(filename)
+        #
+        # std = np.sqrt(tmp_std / len(list(glob.iglob(os.path.join(g_buffer_dir, '**/*.npz'), recursive=True))))
 
         # Save the mean and std
         data = {}
-        data['g_m'] = mean
-        data['g_s'] = std
+        data['g_m'] = 0.0
+        data['g_s'] = 1.0
         # Mkdir if not exists
         os.makedirs(Path(__file__).parent / 'stats', exist_ok=True)
 

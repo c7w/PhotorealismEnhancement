@@ -76,7 +76,6 @@ Instead of these fake G-buffers generated from images, we strongly recommend ext
 
             img = batch.img.to(device, non_blocking=True)
             f = extract(img)
-            # IPython.embed()
             f = f.reshape(1,32,4,f.shape[-2],f.shape[-1]).mean(dim=2)
             f = torch.nn.functional.interpolate(f, size=(h,w), mode='bicubic')
             f = f.reshape(32,h,w).permute(1,2,0).cpu().numpy().astype(np.float16)

@@ -11,7 +11,7 @@ import torch
 from .batch_types import EPEBatch
 from .synthetic import SyntheticDataset
 from .utils import mat2tensor, normalize_dim
-
+from Carla.generate_dataset_file import Carla
 
 
 def center(x, m, s):
@@ -19,17 +19,6 @@ def center(x, m, s):
 	x[1,:,:] = (x[1,:,:] - m[1]) / s[1]
 	x[2,:,:] = (x[2,:,:] - m[2]) / s[2]
 	return x
-
-
-# CityScape ID!
-def material_from_gt_label(gt_labelmap):
-	""" Merges several classes. """
-
-	h,w = gt_labelmap.shape
-	shader_map = np.zeros((h, w, 12), dtype=np.float32)
-	for k in range(12):
-		shader_map[:, :, k] = (gt_labelmap == k).astype(np.float32)
-	return shader_map
 
 
 class CarlaDataset(SyntheticDataset):
@@ -41,6 +30,8 @@ class CarlaDataset(SyntheticDataset):
 		super(CarlaDataset, self).__init__('CarlaDataset')
 
 		assert gbuffers in ['carla']
+
+		self.carla = Carla()
 
 		self.transform = transform
 		self.gbuffers  = gbuffers
@@ -76,13 +67,14 @@ class CarlaDataset(SyntheticDataset):
 	@property
 	def num_gbuffer_channels(self):
 		""" Number of image channels the provided G-buffers contain."""
-		return 3
+		# return 2
+		return 1
 
 
 	@property
 	def num_classes(self):
 		""" Number of classes in the semantic segmentation maps."""
-		return 12
+		return 11
 
 
 	@property
@@ -109,19 +101,13 @@ class CarlaDataset(SyntheticDataset):
 			raise FileNotFoundError
 			pass
 
+
 		data = np.load(gbuffer_path)
 
-		# print('gbuffer_path:', gbuffer_path)
-		# print('img_path:', img_path)
-
 		img       = mat2tensor(data['img'].astype(np.float32) / 255.0)
-		gbuffers  = mat2tensor(data['gbuffers'][0].astype(np.float32))
+		gbuffers  = mat2tensor(data['gbuffers'].astype(np.float32))
 		gt_labels = mat2tensor(data['shader'].astype(np.float32))
 
-		# print('img', img)
-		# print(gbuffers)
-		# print(gt_labels)
-		# print(img.shape, gbuffers.shape, gt_labels.shape)
 
 		if self._gbuf_mean is not None:
 			gbuffers = center(gbuffers, self._gbuf_mean, self._gbuf_std)
@@ -132,18 +118,28 @@ class CarlaDataset(SyntheticDataset):
 			raise FileNotFoundError
 			pass
 
-		robust_labels = imageio.imread(robust_label_path)
-		robust_labels = torch.zeros((1, 720, 1280), dtype=torch.float32)
+		label_map = [gt_labels[k][np.newaxis, :, :] * k for k in range(12)]
+		label_map = label_map[0:9] + label_map[10:12]  # Exclude 9
+		robust_labels = np.concatenate(label_map, axis=0).max(axis=0)[np.newaxis, :, :]
+		robust_labels =	torch.Tensor(robust_labels).long()
 
-		# print(gt_labels.shape)
+		gt_labels = torch.concat([gt_labels[0:9, :, :], gt_labels[10:12, :, :]], dim=0)
 
-		for k in range(12):
-			robust_labels += gt_labels[k] * k
+		# img =  mat2tensor(np.array(imageio.imread(img_path))).float() / 255.0
+		# gbuffers = np.load(gbuffer_path)['data'].transpose((2, 0, 1))[0:1, :, :]
+		# gtlabel_map = np.array(imageio.imread(gt_label_path))
+		# mask = np.zeros(shape=(gtlabel_map.shape[0], gtlabel_map.shape[1], 12))
+		# for idx, color in enumerate(Carla.color2id.keys()):
+		# 	mask[:, :, Carla.color2id[tuple(color)]] += (gtlabel_map == color).all(axis=2)
+		# gt_labels = mask.transpose((2, 0, 1))
+		# robust_labels = np.concatenate([mask[:, :, k][np.newaxis, :, :] * k for k in range(12)], axis=0)\
+		# 				.max(axis=0)[np.newaxis, :, :]
+		#
+		# # Convert to tensor
+		# gbuffers = torch.Tensor(gbuffers).float()
+		# gt_labels = torch.Tensor(gt_labels).float()
+		# robust_labels = torch.Tensor(robust_labels).long()
 
-		# Change dtype to long
-		robust_labels = robust_labels.long()
-
-		# print('robust_labels:', robust_labels)
 
 		return EPEBatch(img, gbuffers=gbuffers, gt_labels=gt_labels, robust_labels=robust_labels, path=img_path, coords=None)
 

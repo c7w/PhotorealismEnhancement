@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+import IPython
 import imageio
 import torch
 
@@ -51,6 +52,8 @@ class RobustlyLabeledDataset(ImageDataset):
 
 
 	def __getitem__(self, index):
+
+		# IPython.embed()
 		
 		idx      = index % self.__len__()
 		img_path = self.paths[idx]

@@ -1,15 +1,15 @@
 # This file should only be used once.
 # It takes train_images.txt, train_labels.txt, val_images.txt, val_labels.txt as input
-# And output a output.txt with the following format:
+# And output an output.txt with the following format:
 # image_dir,gtlabel_dir
 
 if __name__ == '__main__':
-    train_images_txt = "/mnt/e/Cache/tmp/train_images.txt"
-    train_labels_txt = "/mnt/e/Cache/tmp/train_labels.txt"
-    val_images_txt = "/mnt/e/Cache/tmp/val_images.txt"
-    val_labels_txt = "/mnt/e/Cache/tmp/val_labels.txt"
+    train_images_txt = "/home/share/datasets/cityscapes/train_images.txt"
+    train_labels_txt = "/home/share/datasets/cityscapes/train_labels.txt"
+    val_images_txt = "/home/share/datasets/cityscapes/val_images.txt"
+    val_labels_txt = "/home/share/datasets/cityscapes/val_labels.txt"
 
-    output_txt = "/mnt/e/Cache/tmp/output.txt"
+    output_txt = "/home/gaoha/epe/Carla/cityscapes.txt"
 
     f = open(output_txt, 'w+', encoding='utf-8')
     g = open(train_images_txt, 'r', encoding='utf-8')
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     g = open(train_images_txt, 'r', encoding='utf-8')
 
     for i in range(line_g):
-        f.write('/media/ubuntu/c7wyyds/CityScapes/' + g.readline().strip() + ',' + '/media/ubuntu/c7wyyds/CityScapes/' + h.readline().strip().replace('trainLabelIds.png', 'labelIds.png') + '\n')
+        f.write('/home/share/datasets/cityscapes/' + g.readline().strip() + ',' + '/home/share/datasets/cityscapes/' + h.readline().strip().replace('trainLabelIds.png', 'labelIds.png') + '\n')
     g.close()
     h.close()
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     g = open(train_images_txt, 'r', encoding='utf-8')
     for i in range(line_g):
         f.write(
-            '/media/ubuntu/c7wyyds/CityScapes/' + g.readline().strip() + ',' + '/media/ubuntu/c7wyyds/CityScapes/' + h.readline().strip().replace('trainLabelIds.png', 'labelIds.png') + '\n')
+            '/home/share/datasets/cityscapes/' + g.readline().strip() + ',' + '/home/share/datasets/cityscapes/' + h.readline().strip().replace('trainLabelIds.png', 'labelIds.png') + '\n')
     g.close()
     h.close()
 

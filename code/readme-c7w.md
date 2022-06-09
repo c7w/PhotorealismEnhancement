@@ -18,7 +18,7 @@ conda activate epe
 + robust_label_path 本来应该是使用 Robust Segmentation Network 的语义分割结果，但是这里直接指向了 Ground Truth
 + gbuffer_path 为 G-Buffer 的原地址，格式为 npz
   + npz 中的 img 项为 RGB 彩色图像
-  + npz 中的 gbuffers 项 目前只有 depth
+  + npz 中的 gbuffers 项 目前只有 depth, #channels = 1
   + npz 中的 shader 项为 12 个 mask
 + gt_label_path 为 Ground Truth 的原地址
 

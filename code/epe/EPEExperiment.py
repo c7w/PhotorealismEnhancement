@@ -1,4 +1,8 @@
+import math
 import warnings
+
+import IPython as IPython
+
 warnings.filterwarnings('ignore', message='numpy.dtype size changed')
 warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -163,7 +167,11 @@ class EPEExperiment(ee.GANExperiment):
 		if self.action == 'train':
 
 			source_dataset = fake_datasets[self.fake_name](ds.utils.read_filelist(self.fake_train_path, 4, True))
-			target_dataset = ds.RobustlyLabeledDataset(self.real_name, ds.utils.read_filelist(self.real_basepath, 2, True))
+
+			if self.real_name == "Cityscapes":
+				target_dataset = ds.Cityscapes(self.real_name, ds.utils.read_filelist(self.real_basepath, 2, True))
+			else:
+				target_dataset = ds.RobustlyLabeledDataset(self.real_name, ds.utils.read_filelist(self.real_basepath, 2, True))
 
 			if self.sampling == 'matching':
 				self.dataset_train = MatchedCrops(source_dataset, target_dataset, self.sample_cfg)
@@ -241,7 +249,16 @@ class EPEExperiment(ee.GANExperiment):
 			pass
 
 		loss, log_info['vgg'] = tee_loss(loss, self.vgg_weight * self.vgg_loss.forward_fake(batch_fake.img, rec_fake)[0])
+
+		# If loss is NaN
+		if math.isnan(loss):
+			IPython.embed(header="run generator loss is nan")
+
 		loss.backward()
+
+		# for i in self.network.generator.parameters():
+		# 	if torch.isnan(i).any():
+		# 		IPython.embed("After backward")
 
 		return log_info, \
 		{'rec_fake':rec_fake.detach(), 'fake':batch_fake.img.detach(), 'real':batch_real.img.detach()}
@@ -300,6 +317,11 @@ class EPEExperiment(ee.GANExperiment):
 				pass
 			log_scalar[f'rdf{i}']      = accuracy(rm.detach()) # percentage of fake predicted as real
 			loss, log_scalar[f'ds{i}'] = tee_loss(loss, self.gan_loss.forward_fake(rm).mean())
+
+			# If loss is NaN
+			if math.isnan(loss):
+				IPython.embed("loss is nan in disc")
+
 			pass
 		del rm
 		del realism_maps
@@ -380,6 +402,9 @@ class EPEExperiment(ee.GANExperiment):
 
 
 if __name__ == '__main__':
+
+	torch.backends.cudnn.benchmark = True
+	torch.backends.cudnn.deterministic = True
 
 	parser = ArgumentParser()
 	EPEExperiment.add_arguments(parser)

@@ -19,6 +19,7 @@ import os
 import logging
 import functools
 
+import IPython
 import numpy as np
 
 import torch
@@ -490,8 +491,9 @@ class HighResolutionNet(nn.Module):
 			self._log.debug(f'IENet:forward(i:{x.shape}, g:{g.shape}, s:{s.shape})')
 			pass
 
+
 		if self._encoder_type is GBufferEncoderType.CONCAT:
-			x = torch.cat((x, g), 1)
+			x = torch.cat((x, g, s), 1)  # Modified by c7w
 			g_list = [None for i in range(4)]
 		elif self._encoder_type is GBufferEncoderType.SPADE:
 			g_list = [g]
