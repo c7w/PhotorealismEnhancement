@@ -52,6 +52,7 @@ vgg_losses = {\
 fake_datasets = {\
 	'GTA':ds.PfDDataset,
 	'Carla':ds.CarlaDataset,
+	'overfit':ds.OverfitDataset,
 }
 
 

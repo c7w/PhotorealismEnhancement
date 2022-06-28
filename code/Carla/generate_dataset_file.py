@@ -120,8 +120,34 @@ class Carla:
                 continue
             print(f"Processing {dir_name}...")
 
+            # G Buffers
+            g_buffer_list = [
+                "SaveSceneDepthTexture",  # 1 Channel
+                "SaveSceneColorTexture",  # 3 Channel
+                # "SaveSceneStencilTexture",
+                "SaveGBufferATexture",  # 3 Channel
+                "SaveGBufferBTexture",  # 3 Channel
+                "SaveGBufferCTexture",  # 3 Channel
+                "SaveGBufferDTexture",  # 3 Channel
+                # "SaveGBufferETexture",
+                # "SaveGBufferFTexture",
+                # "SaveVelocityTexture",
+                # "SaveSSAOTexture",
+                # "SaveCustomDepthTexture",
+                # "SaveCustomStencilTexture",
+            ]
+
+            # Prepare filenames
+            g_buffer_files = []
+            g_buffer_list = [x[len("Save"):][:-len("Texture")] for x in g_buffer_list]
+            for g_buffer_name in g_buffer_list:
+                related_list = [x for x in os.listdir(os.path.join(args.src_path, dir_name, '1', 'gbuffer_v')) if
+                                g_buffer_name in x]
+                related_list = sorted(related_list)
+                g_buffer_files.append(related_list)
+
             # Iterate through all the pngs in tmp_path
-            for file_name in tqdm(os.listdir(road_rgb_path)):
+            for frame_idx, file_name in tqdm(enumerate(os.listdir(road_rgb_path))):
                 if file_name.endswith(".png"):
                     # img_path
                     f.write(Path(os.path.join(args.src_path, dir_name, '1', 'rgb_v', file_name)).resolve().__str__())
@@ -142,19 +168,35 @@ class Carla:
                         # Create the directory if it doesn't exist
                         os.makedirs(os.path.dirname(g_buffer_dir), exist_ok=True)
 
-                        # IPython.embed()
 
                         data = {}
 
                         # Load RGB image
                         data['img'] = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'rgb_v', file_name)))
 
+                        # Zip the gbuffers to a npz file
+                        scene_depth_filename = g_buffer_files[0][frame_idx]
+                        scene_color_filename = g_buffer_files[1][frame_idx]
+                        scene_gbufferA_filename = g_buffer_files[2][frame_idx]
+                        scene_gbufferB_filename = g_buffer_files[3][frame_idx]
+                        scene_gbufferC_filename = g_buffer_files[4][frame_idx]
+                        scene_gbufferD_filename = g_buffer_files[5][frame_idx]
 
-                        raw_depth_map = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'depth_v', file_name)))
+                        import IPython
+                        IPython.embed(header="pre-processing gbuffer files")
+                        # data['depth'] =
+
+
+
+
+
+
+                        raw_depth_map = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'gbuffer_v', file_name)))
                         _x = np.array([1, 256, 256*256]).reshape(3,1) / (256 * 256 * 256 - 1)
 
                         data['gbuffers'] = raw_depth_map.dot(_x)
 
+                        # Ground truth label map
                         gtlabel_map = np.array(imageio.imread(os.path.join(args.src_path, dir_name, '1', 'mask_v', file_name)))
                         # shader_map = np.zeros((gtlabel_map.shape[0], gtlabel_map.shape[1], 12))
 
@@ -165,41 +207,6 @@ class Carla:
 
 
                         data['shader'] = mask
-
-                        # IPython.embed()
-                        # jobs_all = list(itertools.product(range(gtlabel_map.shape[0]), range(gtlabel_map.shape[1])))
-                        # THREAD_CNT = 12
-                        # jobs = [ [] for _ in range(int(len(jobs_all) / THREAD_CNT) + 1) ]
-                        # for k in range(0, len(jobs_all), THREAD_CNT):
-                        #     jobs[int(k / THREAD_CNT)] = jobs_all[k:k+THREAD_CNT]
-
-                        # for job in jobs:
-                        #     process_list = []
-                        #     for arg in job:
-                        #         process_list.append(Process(target=convert_gtlabel_to_shader_map, args=arg))
-                        #         process_list[-1].start()
-                        #     for process in process_list:
-                        #         process.join()
-
-
-
-
-                        # shader_map = np.apply_along_axis(convert_gtlabel_to_shader_map, axis=2, arr=gtlabel_map)
-
-                        # # From (h, w, 3) to (h, w, 1), use lambda function to convert to (h, w, 1)
-                        # new_gtlabel_map = np.zeros(shape=(gtlabel_map.shape[0], gtlabel_map.shape[1]), dtype=np.uint8)
-                        #
-                        # for i in range(gtlabel_map.shape[0]):
-                        #     for j in range(gtlabel_map.shape[1]):
-                        #         new_gtlabel_map[i, j] = np.array([])
-                        #
-                        # shader_map = np.zeros((gtlabel_map.shape[0], gtlabel_map.shape[1], 12), dtype=np.float32)
-                        # for k in range(12):
-                        #     shader_map[:, :, k] = (new_gtlabel_map == k).astype(np.float32)
-
-
-
-                        # IPython.embed()
 
                         np.savez(g_buffer_dir, **data)
 

@@ -2,7 +2,7 @@ import random
 
 import imageio
 
-dataset_csv = '/home/gaoha/epe/code/Carla/OverfitTest/overfit-carla2cs-filtered.csv'
+dataset_csv = '/home/gaoha/epe/overfit-test/filtered_matches.csv'
 
 # Open dataset_csv
 with open(dataset_csv, 'r') as f:
@@ -31,7 +31,7 @@ with open(dataset_csv, 'r') as f:
         # Open src_path as img
         img = imageio.imread(tmp[0])
         img2 = imageio.imread(tmp[5])
-        imageio.imwrite(f'/home/gaoha/epe/Carla/sample3/{hash_val}_Carla.png', img[src_r0:src_r1, src_c0:src_c1, :])
-        imageio.imwrite(f'/home/gaoha/epe/Carla/sample3/{hash_val}_CityScapes.png', img2[dst_r0:dst_r1, dst_c0:dst_c1, :])
+        imageio.imwrite(f'/home/gaoha/epe/overfit-test/sample/{hash_val}_Carla.png', img[src_r0:src_r1, src_c0:src_c1, :])
+        imageio.imwrite(f'/home/gaoha/epe/overfit-test/sample/{hash_val}_CityScapes.png', img2[dst_r0:dst_r1, dst_c0:dst_c1, :])
 
 

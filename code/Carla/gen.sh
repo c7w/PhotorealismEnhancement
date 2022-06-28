@@ -20,7 +20,7 @@ python3 ../epe/matching/compute_weights.py /home/gaoha/epe/Carla/filtered_matche
 
 ### Training
 # Start Training
-CUDA_VISIBLE_DEVICES=7 python3 /home/gaoha/epe/code/epe/EPEExperiment.py --log_dir /home/gaoha/epe/code/Carla/logs train /home/gaoha/epe/code/config/train_carla2cs.yaml
+CUDA_VISIBLE_DEVICES=3 python3 /home/gaoha/epe/code/epe/EPEExperiment.py --log_dir /home/gaoha/epe/code/Carla/logs train /home/gaoha/epe/code/config/train_carla2cs.yaml
 
 CUDA_VISIBLE_DEVICES=6 python3 /home/gaoha/epe/code/epe/EPEExperiment.py --log_dir /home/gaoha/epe/code/Carla/logs train /home/gaoha/epe/code/config/train_carla2cs_ie2.yaml
 
